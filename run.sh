@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# --- Environment Setup (For macOS Shortcuts/Non-interactive shells) ---
+# Source common profiles to get NVM, Path, etc.
+[ -f ~/.zshrc ] && source ~/.zshrc
+[ -f ~/.bash_profile ] && source ~/.bash_profile
+
+# Ensure NVM is loaded if it exists
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use
+
+# Add common local bin paths to PATH
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/Library/Python/3.9/bin:$PATH"
+
 # Function to kill background processes on exit
 cleanup() {
     echo ""
@@ -18,27 +30,29 @@ echo "Cleaning up ports 8000 and 3000..."
 lsof -ti:8000 | xargs kill -9 2>/dev/null
 lsof -ti:3000 | xargs kill -9 2>/dev/null
 
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
 # 2. Start Backend
 echo "Starting Backend (FastAPI)..."
-cd "$(dirname "$0")/backend"
+cd "$PROJECT_ROOT/backend"
 
-# Detect python and venv
-if [ -d "../venv" ]; then
-    PYTHON="../venv/bin/python3"
-else
-    PYTHON="python3"
+# Use/Create virtual environment for reliability
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
 fi
 
-# Ensure dependencies are installed
+PYTHON_BIN="venv/bin/python3"
+$PYTHON_BIN -m pip install --upgrade pip
 echo "Verifying backend dependencies..."
-$PYTHON -m pip install -r requirements.txt
+$PYTHON_BIN -m pip install -r requirements.txt
 
-$PYTHON -m uvicorn main:app --reload --port 8000 &
+$PYTHON_BIN -m uvicorn main:app --reload --port 8000 &
 BACKEND_PID=$!
 
 # 3. Start Frontend
 echo "Starting Frontend (Next.js)..."
-cd "../frontend"
+cd "$PROJECT_ROOT/frontend"
 
 # Check node_modules
 if [ ! -d "node_modules" ]; then
