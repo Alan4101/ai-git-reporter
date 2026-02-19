@@ -5,8 +5,14 @@ import axios from "axios"
 import { FolderPicker } from "@/components/FolderPicker"
 import { CommitCard } from "@/components/CommitCard"
 import { Commit, AnalyzeResponse, AIResponse } from "@/types"
-import { Send, Download, Bot, CheckCircle2, AlertCircle } from "lucide-react"
+import { Send, Download, Bot, Sparkles, CheckCircle2, History, LayoutDashboard, Terminal } from "lucide-react"
 import ReactMarkdown from "react-markdown"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 const API_BASE = "http://localhost:8000"
 
@@ -56,7 +62,6 @@ export default function Home() {
       const analysis = res.data.analysis
       setCommits(prev => prev.map(c => c.hash === commit.hash ? { ...c, analysis, isAnalyzing: false } : c))
       
-      // Update the cumulative report text
       setReportText(prev => {
         const header = prev || `📊 *ЗВІТ ЗА ${new Date(reportDate).toLocaleDateString("uk-UA")}*\n\n`
         const entry = `🔹 *${commit.summary}* (${commit.duration} хв)\n${analysis}\n\n`
@@ -64,7 +69,7 @@ export default function Home() {
       })
     } catch (err) {
       setCommits(prev => prev.map(c => c.hash === commit.hash ? { ...c, isAnalyzing: false } : c))
-      alert("AI аналіз завершився помилкою. Перевірте, чи запущена Ollama.")
+      setError("AI аналіз завершився помилкою. Перевірте, чи запущена Ollama.")
     }
   }
 
@@ -91,80 +96,167 @@ export default function Home() {
   }
 
   return (
-    <main className="container max-w-4xl py-12 px-4 animate-in fade-in duration-700">
-      <header className="mb-12 text-center">
-        <div className="inline-flex items-center gap-2 mb-4 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
-          <Bot className="w-5 h-5 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-widest text-primary">Next Generation</span>
-        </div>
-        <h1 className="text-5xl font-black bg-gradient-to-r from-primary via-white to-primary bg-clip-text text-transparent mb-4">
-          Git AI Report Agent
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Автоматизуйте ваші щоденні звіти за допомогою AI та Git
-        </p>
-      </header>
+    <div className="min-h-screen bg-[#050505] text-slate-200 selection:bg-primary/30">
+      {/* Background Orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+      </div>
 
-      <FolderPicker onAnalyze={handleAnalyzeRepo} isAnalyzing={isAnalyzing} />
-
-      {error && (
-        <div className="glass border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-400 mb-8 animate-in slide-in-from-top-4">
-          <AlertCircle className="w-5 h-5" />
-          {error}
-        </div>
-      )}
-
-      {commits.length > 0 && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              Знайдено комітів: {commits.length}
-            </h2>
+      <main className="relative container max-w-6xl py-12 px-6">
+        {/* Navigation / Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.2em] text-xs">
+              <Terminal className="w-4 h-4" />
+              Automated Intelligence
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+              Git <span className="text-primary">Reporter</span> Pro
+            </h1>
           </div>
-          
-          <div className="grid gap-4">
-            {commits.map(commit => (
-              <CommitCard 
-                key={commit.hash} 
-                commit={commit} 
-                onAnalyze={handleAnalyzeCommit} 
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
-      {reportText && (
-        <div className="mt-12 glass p-8 rounded-3xl animate-in zoom-in-95 duration-500">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Попередній перегляд звіту</h2>
-            <div className="flex gap-2">
-              <button 
-                onClick={downloadReport}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10"
-                title="Скачати TXT"
-              >
-                <Download className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={handleSendTelegram}
-                disabled={isSending}
-                className="flex items-center gap-2 px-6 py-2 bg-primary rounded-xl font-bold hover:scale-105 transition-all disabled:opacity-50"
-              >
-                {isSending ? (
-                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : <Send className="w-4 h-4" />}
-                Надіслати у Telegram
-              </button>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="border-white/10 bg-white/5 py-1.5 px-3">
+              <History className="w-3 h-3 mr-2" />
+              v2.1.0 Stable
+            </Badge>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center p-[1px]">
+              <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                 <Bot className="w-5 h-5 text-white" />
+              </div>
             </div>
           </div>
-          
-          <div className="bg-black/40 rounded-2xl p-6 border border-white/5 prose prose-invert max-w-none">
-            <ReactMarkdown>{reportText}</ReactMarkdown>
+        </header>
+
+        {/* Action Panel */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          <div className="lg:col-span-12">
+            <FolderPicker onAnalyze={handleAnalyzeRepo} isAnalyzing={isAnalyzing} />
           </div>
-        </div>
-      )}
-    </main>
+
+          {/* Error Feed */}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="lg:col-span-12"
+              >
+                <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive-foreground">
+                  <Sparkles className="h-4 w-4" />
+                  <AlertTitle>Помилка</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Main Feed */}
+          <div className="lg:col-span-7 space-y-6 min-w-0">
+            <div className="flex items-center justify-between mb-4">
+               <h2 className="text-sm font-black uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4" />
+                Commit Stream
+              </h2>
+              {commits.length > 0 && (
+                <Badge className="bg-green-500/10 text-green-400 border-green-500/20 px-3">
+                  {commits.length} інсайтів знайдено
+                </Badge>
+              )}
+            </div>
+
+            {commits.length === 0 && !isAnalyzing && (
+              <div className="flex flex-col items-center justify-center py-20 px-10 border-2 border-dashed border-white/5 rounded-[2rem] bg-white/[0.02]">
+                <Bot className="w-16 h-16 text-white/10 mb-6" />
+                <h3 className="text-xl font-bold text-white/40">Очікування команд...</h3>
+                <p className="text-muted-foreground text-center mt-2 max-w-xs">
+                  Виберіть локальний проект та дату, щоб AI зміг згенерувати звіт.
+                </p>
+              </div>
+            )}
+
+            <div className="grid gap-4">
+              {commits.map((commit, idx) => (
+                <motion.div
+                  key={commit.hash}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <CommitCard 
+                    commit={commit} 
+                    onAnalyze={handleAnalyzeCommit} 
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Side Panel / Preview */}
+          <div className="lg:col-span-5 relative min-w-0">
+            <aside className="sticky top-12 space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-black uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Final Report
+                </h2>
+                {reportText && (
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" onClick={downloadReport} className="h-8 w-8 hover:bg-white/10">
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      onClick={handleSendTelegram} 
+                      disabled={isSending}
+                      size="sm"
+                      className="bg-[#0088cc] hover:bg-[#0088cc]/90 h-8"
+                    >
+                      <Send className="w-3 h-3 mr-2" />
+                      Telegram
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className={cn(
+                "relative rounded-[2rem] border border-white/10 overflow-hidden min-h-[500px] flex flex-col group",
+                reportText ? "bg-white/[0.03]" : "bg-black/40"
+              )}>
+                {reportText ? (
+                  <ScrollArea className="flex-1 p-8">
+                    <div className="prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown>{reportText}</ReactMarkdown>
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-20 group-hover:opacity-40 transition-opacity">
+                    <div className="w-12 h-12 border-2 border-white/20 border-dashed rounded-full flex items-center justify-center mb-4">
+                       <Sparkles className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest">Preview is empty</p>
+                  </div>
+                )}
+                
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+              </div>
+
+              {/* Tips Section */}
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/5 text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-white block mb-1">PRO TIP:</strong>
+                Натисніть на &quot;AI Аналіз&quot; для кожного коміту окремо, щоб деталізувати звіт. AI автоматично обєднає їх у фінальний документ.
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+      
+      <footer className="py-12 border-t border-white/5 mt-20 text-center">
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest opacity-50">
+          Powered by Ollama + FastApi + Next.js
+        </p>
+      </footer>
+    </div>
   )
 }
