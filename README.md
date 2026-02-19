@@ -1,3 +1,58 @@
+# 🚀 Git AI Reporter Pro (English)
+
+A modern tool for automatically generating technical reports based on your Git commits using local AI (Ollama).
+
+![App Image](image.png)
+
+## ✨ Features
+
+- **🤖 AI Analysis**: Uses local models (e.g., Llama 3) to distill the technical essence of your changes.
+- **📅 Date-Based Reports**: Retrieve all commits for a specific day across all branches simultaneously.
+- **⚖️ Duration Calculation**: Automatically calculates the total work time and formats it as hours and minutes.
+- **🛡️ Security**: All keys and configurations are stored locally in `.env` files.
+- **📱 Telegram Integration**: Send ready-to-go reports directly to your work chat with a single click.
+- **🎨 Modern UI**: Glassmorphism design, animated gradients, and premium components based on Shadcn UI.
+
+## 🛠 Tech Stack
+
+- **Backend**: Python (FastAPI), GitPython, Ollama API.
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS 4, Framer Motion, Lucide React, Shadcn/UI, Sonner.
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+- [Ollama](https://ollama.com/) installed with the `llama3` model.
+- Python 3.9+ and Node.js 18+.
+
+### 2. Environment Setup
+Create a `.env` file in the `backend/` folder:
+```env
+TELEGRAM_TOKEN=your_token
+TELEGRAM_CHAT_ID=your_id
+OLLAMA_URL=http://localhost:11434/api/generate
+```
+
+Create a `.env.local` file in the `frontend/` folder:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### 3. Running the App
+Simply run the magic script in the root directory:
+```bash
+chmod +x run.sh
+./run.sh
+```
+This will automatically install dependencies for both backend and frontend, start both servers, and open the application in your browser on port **3001**.
+
+## 📝 Usage
+1. Provide the path to your local Git repository.
+2. Select the report date.
+3. Click **Run Agent** to fetch commits.
+4. Analyze each commit individually or click **Згенерувати загальний звіт** (Generate Full Report) for a holistic daily summary.
+5. Send the result to Telegram or download it as a text file.
+
+---
 # 🚀 Git AI Reporter Pro
 
 Сучасний інструмент для автоматичного створення технічних звітів на основі ваших Git-комітів за допомогою локального ШІ (Ollama).
@@ -7,7 +62,7 @@
 - **🤖 AI Аналіз**: Використовує локальні моделі (наприклад, Llama 3) для дистиляції технічної суті ваших змін.
 - **📅 Звіти за Датою**: Отримуйте всі коміти за конкретний день з усіх гілок одночасно.
 - **⚖️ Розрахунок часу**: Автоматично підсумовує витрачений час та виводить його у форматі годин та хвилин.
-- **🛡️ Безпека**: Всі ключі та налаштування зберігаються локально у `.env` файлах.
+
 - **📱 Telegram Integration**: Відправляйте готові звіти прямо у ваш робочий чат одним кліком.
 - **🎨 Modern UI**: Скляний дизайн, анімовані градієнти та преміальні компоненти на базі Shadcn UI.
 
