@@ -26,9 +26,9 @@ trap cleanup SIGINT SIGTERM
 echo "🚀 Starting Git AI Reporter Pro..."
 
 # 1. Cleanup old processes on these ports
-echo "Cleaning up ports 8000 and 3000..."
+echo "Cleaning up ports 8000 and 3001..."
 lsof -ti:8000 | xargs kill -9 2>/dev/null
-lsof -ti:3000 | xargs kill -9 2>/dev/null
+lsof -ti:3001 | xargs kill -9 2>/dev/null
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
@@ -65,11 +65,11 @@ FRONTEND_PID=$!
 
 echo "✅ All systems go!"
 echo "Backend: http://localhost:8000"
-echo "Frontend: http://localhost:3000"
+echo "Frontend: http://localhost:3001"
 echo "Press Ctrl+C to stop."
 
 # 4. Open browser (macOS)
 sleep 5
-open "http://localhost:3000"
+open "http://localhost:3001"
 
 wait

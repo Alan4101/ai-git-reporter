@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Folder, Calendar as CalendarIcon, Play } from "lucide-react"
+import { Folder, Calendar as CalendarIcon, Play, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { uk } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar } from "@/components/ui/calendar"
@@ -26,12 +27,13 @@ export function FolderPicker({ onAnalyze, isAnalyzing }: FolderPickerProps) {
 
   const handleBrowse = async () => {
     try {
-      const res = await fetch("http://localhost:8000/browse", { method: "POST" });
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const res = await fetch(`${apiBase}/browse`, { method: "POST" });
       const data = await res.json();
       if (data.path) setPath(data.path);
     } catch (err) {
       console.error("Browse error:", err);
-      alert("Не вдалося підключитися до сервера. Переконайтеся, що бекенд запущено.");
+      toast.error("Не вдалося підключитися до сервера. Переконайтеся, що бекенд запущено.");
     }
   }
 
@@ -97,15 +99,33 @@ export function FolderPicker({ onAnalyze, isAnalyzing }: FolderPickerProps) {
             size="lg"
             onClick={() => onAnalyze(path, format(date, "yyyy-MM-dd"))}
             disabled={isAnalyzing || !path}
-            className="w-full md:w-auto h-11 px-10 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+            className={cn(
+               "w-full md:w-auto h-12 px-12 font-black uppercase tracking-[0.15em] transition-all duration-300",
+               "bg-linear-to-r from-primary via-primary/90 to-primary/80 text-white",
+               "shadow-[0_0_30px_rgba(var(--primary),0.2)] hover:shadow-[0_0_40px_rgba(var(--primary),0.4)]",
+               "hover:scale-[1.03] active:scale-95",
+               "border-0 relative overflow-hidden group/btn",
+               isAnalyzing && "opacity-80 scale-100"
+            )}
           >
+            {/* Gloss shine effect */}
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:animate-shine" />
+            
             {isAnalyzing ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="flex items-center gap-3 relative z-10">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="drop-shadow-sm">Йде аналіз...</span>
+              </div>
             ) : (
-              <>
-                <Play className="w-4 h-4 fill-current mr-2" />
-                Run Agent
-              </>
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="relative">
+                   <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-30" />
+                   <div className="bg-white/10 p-1.5 rounded-full backdrop-blur-sm">
+                      <Play className="w-4 h-4 fill-current" />
+                   </div>
+                </div>
+                <span className="drop-shadow-sm">Run Agent</span>
+              </div>
             )}
           </Button>
         </div>

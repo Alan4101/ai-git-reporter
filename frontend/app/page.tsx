@@ -5,7 +5,7 @@ import axios from "axios"
 import { FolderPicker } from "@/components/FolderPicker"
 import { CommitCard } from "@/components/CommitCard"
 import { Commit, AnalyzeResponse, AIResponse } from "@/types"
-import { Send, Download, Bot, Sparkles, CheckCircle2, History, LayoutDashboard, Terminal } from "lucide-react"
+import { Send, Download, Bot, Sparkles, CheckCircle2, History, LayoutDashboard, Terminal, RotateCcw, Wand2, Loader2 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -13,8 +13,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
-const API_BASE = "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+const formatDuration = (totalMins: number) => {
+  const hours = Math.floor(totalMins / 60)
+  const mins = totalMins % 60
+  if (hours > 0) {
+    return `${hours} год ${mins} хв`
+  }
+  return `${mins} хв`
+}
 
 export default function Home() {
   const [commits, setCommits] = useState<Commit[]>([])
@@ -23,6 +33,7 @@ export default function Home() {
   const [reportText, setReportText] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [isGeneratingFullReport, setIsGeneratingFullReport] = useState(false)
 
   const handleAnalyzeRepo = async (path: string, date: string) => {
     setIsAnalyzing(true)
@@ -62,12 +73,17 @@ export default function Home() {
       const analysis = res.data.analysis
       setCommits(prev => prev.map(c => c.hash === commit.hash ? { ...c, analysis, isAnalyzing: false } : c))
       
-      setReportText(prev => {
-        const header = prev || `📊 *ЗВІТ ЗА ${new Date(reportDate).toLocaleDateString("uk-UA")}*\n\n`
-        const entry = `🔹 *${commit.summary}* (${commit.duration} хв)\n${analysis}\n\n`
-        return header + entry
+      setReportText(() => {
+        const analyzedCommits = commits.map(c => c.hash === commit.hash ? { ...c, analysis } : c).filter(c => c.analysis)
+        const header = `📊 **ЗВІТ ЗА ${new Date(reportDate).toLocaleDateString("uk-UA")}**\n\n`
+        let entries = ""
+        analyzedCommits.forEach(c => {
+          entries += `📍 ${c.analysis} (**${c.duration} хв**)\n\n`
+        })
+        const total = analyzedCommits.reduce((acc, c) => acc + c.duration, 0)
+        return header + entries + `\n---\n⏱️ **Всього часу:** ${formatDuration(total)}`
       })
-    } catch (err) {
+    } catch {
       setCommits(prev => prev.map(c => c.hash === commit.hash ? { ...c, isAnalyzing: false } : c))
       setError("AI аналіз завершився помилкою. Перевірте, чи запущена Ollama.")
     }
@@ -78,11 +94,40 @@ export default function Home() {
     setIsSending(true)
     try {
       await axios.post(`${API_BASE}/send-telegram`, { text: reportText })
-      alert("Звіт успішно надіслано в Telegram!")
-    } catch (err) {
-      alert("Помилка надсилання.")
+      toast.success("Звіт успішно надіслано в Telegram!")
+    } catch {
+      toast.error("Помилка надсилання.")
     } finally {
       setIsSending(false)
+    }
+  }
+
+  const handleResetReport = () => {
+    if (confirm("Ви впевнені, що хочете очистити звіт?")) {
+      setReportText("")
+      setCommits(prev => prev.map(c => ({ ...c, analysis: undefined })))
+    }
+  }
+
+  const handleGenerateFullReport = async () => {
+    if (commits.length === 0) return
+    setIsGeneratingFullReport(true)
+    setError(null)
+    try {
+      const res = await axios.post<{ summary: string }>(`${API_BASE}/analyze-summary`, {
+        commits: commits.map(c => ({ summary: c.summary, duration: c.duration })),
+        date: reportDate
+      })
+      
+      const summary = res.data.summary
+      const total = commits.reduce((acc, c) => acc + c.duration, 0)
+      const header = `📊 **ЗАГАЛЬНИЙ ЗВІТ ЗА ${new Date(reportDate).toLocaleDateString("uk-UA")}**\n\n`
+      const footer = `\n\n---\n⏱️ **Всього часу:** ${formatDuration(total)}`
+      setReportText(header + summary + footer)
+    } catch {
+      setError("Не вдалося згенерувати загальний звіт.")
+    } finally {
+      setIsGeneratingFullReport(false)
     }
   }
 
@@ -202,28 +247,67 @@ export default function Home() {
                   <CheckCircle2 className="w-4 h-4" />
                   Final Report
                 </h2>
-                {reportText && (
+                {(reportText || commits.length > 0) && (
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={downloadReport} className="h-8 w-8 hover:bg-white/10">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      onClick={handleSendTelegram} 
-                      disabled={isSending}
-                      size="sm"
-                      className="bg-[#0088cc] hover:bg-[#0088cc]/90 h-8"
-                    >
-                      <Send className="w-3 h-3 mr-2" />
-                      Telegram
-                    </Button>
+
+                    
+                    {reportText && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleResetReport} 
+                          className="h-8 border-white/10 hover:bg-red-500/10 text-xs"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-2" />
+                          Reset
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={downloadReport} className="h-8 w-8 hover:bg-white/10">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          onClick={handleSendTelegram} 
+                          disabled={isSending}
+                          size="sm"
+                          className="bg-[#0088cc] hover:bg-[#0088cc]/90 h-8"
+                        >
+                          <Send className="w-3 h-3 mr-2" />
+                          Telegram
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
 
               <div className={cn(
-                "relative rounded-[2rem] border border-white/10 overflow-hidden min-h-[500px] flex flex-col group",
-                reportText ? "bg-white/[0.03]" : "bg-black/40"
+                "relative rounded-4xl border border-white/10 overflow-hidden min-h-[500px] flex flex-col group transition-all duration-500",
+                reportText ? "bg-white/3 border-primary/20" : "bg-black/40"
               )}>
+                {commits.length > 0 && !reportText && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/20 backdrop-blur-[2px]">
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="p-1 rounded-full bg-linear-to-r from-primary via-blue-500 to-purple-600 animate-gradient-x shadow-[0_0_20px_rgba(var(--primary),0.3)]"
+                    >
+                      <Button 
+                        onClick={handleGenerateFullReport}
+                        disabled={isGeneratingFullReport}
+                        size="lg"
+                        className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-black hover:bg-black/80 text-white border-0 transition-transform active:scale-95"
+                      >
+                        {isGeneratingFullReport ? (
+                          <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-5 h-5 mr-3 text-primary" />
+                        )}
+                        Згенерувати загальний звіт
+                      </Button>
+                    </motion.div>
+                  </div>
+                )}
+
                 {reportText ? (
                   <ScrollArea className="flex-1 p-8">
                     <div className="prose prose-invert prose-sm max-w-none">

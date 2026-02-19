@@ -34,6 +34,8 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-gradient-x: gradient-x 3s linear infinite;
+  --animate-shine: shine 1.5s ease-in-out infinite;
 
   @keyframes accordion-down {
     from { height: 0; }
@@ -42,6 +44,14 @@
   @keyframes accordion-up {
     from { height: var(--radix-accordion-content-height); }
     to { height: 0; }
+  }
+  @keyframes gradient-x {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 }
 
@@ -158,4 +168,25 @@
 
 .gradient-bg {
   background: radial-gradient(circle at top right, #1a1a2e, #16213e, #0f3460);
+}
+
+/* Custom Typography Overrides */
+.prose ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.prose li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.prose li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: bold;
 }

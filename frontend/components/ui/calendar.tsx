@@ -110,7 +110,7 @@ function Calendar({
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("bg-accent rounded-r-md", defaultClassNames.range_end),
         today: cn(
-          "bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none",
+          "bg-transparent text-foreground font-bold",
           defaultClassNames.today
         ),
         outside: cn(
@@ -178,7 +178,7 @@ function CalendarDayButton({
   modifiers,
   ...props
 }: React.ComponentProps<typeof DayButton>) {
-  const defaultClassNames = getDefaultClassNames()
+
 
   const ref = React.useRef<HTMLButtonElement>(null)
   React.useEffect(() => {
@@ -201,8 +201,14 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 flex size-8 items-center justify-center rounded-md font-normal leading-none group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px]",
-        defaultClassNames.day,
+        "relative flex size-8 items-center justify-center rounded-md font-normal leading-none transition-all duration-200",
+        "hover:bg-primary/20 hover:text-primary active:scale-95", // Hover effect
+        "group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10",
+        modifiers.today && !modifiers.selected && "bg-primary/10 text-primary ring-1 ring-primary/30", // Today's state
+        modifiers.selected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground", // Selected state
+        modifiers.range_middle && "bg-accent text-accent-foreground",
+        modifiers.range_start && "bg-primary text-primary-foreground",
+        modifiers.range_end && "bg-primary text-primary-foreground",
         className
       )}
       {...props}

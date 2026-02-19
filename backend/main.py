@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 import requests
 import os
 import json
+from dotenv import load_dotenv
+
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
 
 app = FastAPI(title="Git AI Reporter API")
 
@@ -18,10 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Constants from existing app.py
-TELEGRAM_TOKEN = "8289309423:AAFUHf8JZbSsDx-IiMaiS4o-v0UOZ215gEY"
-TELEGRAM_CHAT_ID = "310303950"
-OLLAMA_URL = "http://localhost:11434/api/generate"
+# Constants from .env
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 
 class AnalyzeRequest(BaseModel):
     repo_path: str
@@ -35,6 +39,10 @@ class AIRequest(BaseModel):
     files: list[str]
     duration_mins: int = None
 
+class SummaryRequest(BaseModel):
+    commits: list[dict]
+    date: str
+
 @app.post("/analyze")
 async def analyze_repo(req: AnalyzeRequest):
     if not os.path.exists(os.path.join(req.repo_path, '.git')):
@@ -45,7 +53,7 @@ async def analyze_repo(req: AnalyzeRequest):
         start_date = datetime.strptime(req.date, "%Y-%m-%d")
         end_date = start_date + timedelta(days=1)
         
-        commits = list(repo.iter_commits(since=start_date, until=end_date))
+        commits = list(repo.iter_commits(rev=None, all=True, no_merges=True, since=start_date, until=end_date))
         commits.reverse() # Oldest first for time calculation
         
         result_commits = []
@@ -80,15 +88,17 @@ async def analyze_ai(req: AIRequest):
         time_info = f"Реальний витрачений час на цей період: {int(hours)}г {int(mins)}хв."
     
     prompt = f"""
-    Ти техлід, що пише звіт про виконану роботу.
+    Ти техлід. Напиши максимально стислий, технічний звіт про зміни.
     Коміт: "{req.commit_msg}"
-    Змінені файли: {', '.join(req.files)}
+    Файли: {', '.join(req.files)}
     {time_info}
     
-    Напиши:
-    1. Що конкретно було зроблено (людською мовою).
-    2. Використай наданий час або оціни його, якщо дані неточні.
-    Пиши українською.
+    Вимоги:
+    1. Лише суть виконаного завдання (bullet points).
+    2. НЕ згадуй назви файлів та шляхи у звіті.
+    3. Без вступних фраз ("Ось звіт", "У цьому коміті").
+    4. Використовуй професійну термінологію.
+    5. Пиши українською.
     """
     
     try:
@@ -98,6 +108,34 @@ async def analyze_ai(req: AIRequest):
             "stream": False
         }, timeout=30)
         return {"analysis": r.json().get('response', "AI error")}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Ollama connection failed")
+
+@app.post("/analyze-summary")
+async def analyze_summary(req: SummaryRequest):
+    commits_str = "\n".join([f"- {c['summary']} ({c['duration']} хв)" for c in req.commits])
+    
+    prompt = f"""
+    Ти техлід. Напиши підсумковий звіт за день ({req.date}).
+    Список виконаних завдань:
+    {commits_str}
+    
+    Вимоги:
+    1. Згрупуй подібні завдання, якщо це доречно.
+    2. Напиши загальний висновок про прогрес за день.
+    3. Лише технічна суть (bullet points).
+    4. Без вступних та розмитих фраз.
+    5. НЕ згадуй файли.
+    6. Пиши українською.
+    """
+    
+    try:
+        r = requests.post(OLLAMA_URL, json={
+            "model": "llama3", 
+            "prompt": prompt, 
+            "stream": False
+        }, timeout=45)
+        return {"summary": r.json().get('response', "AI error")}
     except Exception:
         raise HTTPException(status_code=503, detail="Ollama connection failed")
 
