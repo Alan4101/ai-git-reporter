@@ -26,6 +26,7 @@ app.add_middleware(
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 class AnalyzeRequest(BaseModel):
     repo_path: str
@@ -103,8 +104,8 @@ async def analyze_ai(req: AIRequest):
     
     try:
         r = requests.post(OLLAMA_URL, json={
-            "model": "llama3", 
-            "prompt": prompt, 
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
             "stream": False
         }, timeout=30)
         return {"analysis": r.json().get('response', "AI error")}
@@ -131,8 +132,8 @@ async def analyze_summary(req: SummaryRequest):
     
     try:
         r = requests.post(OLLAMA_URL, json={
-            "model": "llama3", 
-            "prompt": prompt, 
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
             "stream": False
         }, timeout=45)
         return {"summary": r.json().get('response', "AI error")}
