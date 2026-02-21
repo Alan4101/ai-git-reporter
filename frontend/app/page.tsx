@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion"
 import { FolderPicker } from "@/components/FolderPicker"
 import {
   PageHeader,
+  AIProviderSelector,
   ErrorAlert,
   CommitStream,
   ReportPanel,
@@ -13,6 +14,8 @@ import { useReportPage } from "@/hooks/useReportPage"
 export default function Home() {
   const {
     commits,
+    aiProvider,
+    setAiProvider,
     reportText,
     error,
     isAnalyzing,
@@ -38,8 +41,14 @@ export default function Home() {
         <PageHeader />
 
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          <div className="lg:col-span-12">
+          <div className="lg:col-span-12 space-y-4">
             <FolderPicker onAnalyze={handleAnalyzeRepo} isAnalyzing={isAnalyzing} />
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                AI модель
+              </span>
+              <AIProviderSelector value={aiProvider} onChange={setAiProvider} />
+            </div>
           </div>
 
           <AnimatePresence>
@@ -67,7 +76,7 @@ export default function Home() {
 
       <footer className="py-12 border-t border-white/5 mt-20 text-center">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest opacity-50">
-          Powered by Ollama + FastApi + Next.js
+          Powered by Ollama / Grok + FastApi + Next.js
         </p>
       </footer>
     </div>

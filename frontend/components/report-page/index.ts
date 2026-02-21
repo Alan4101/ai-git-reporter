@@ -1,4 +1,5 @@
 export { PageHeader } from "./PageHeader"
+export { AIProviderSelector } from "./AIProviderSelector"
 export { ErrorAlert } from "./ErrorAlert"
 export { CommitStream } from "./CommitStream"
 export { ReportPanel } from "./ReportPanel"

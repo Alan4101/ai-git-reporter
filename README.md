@@ -6,7 +6,7 @@ A modern tool for automatically generating technical reports based on your Git c
 
 ## ✨ Features
 
-- **🤖 AI Analysis**: Uses local models (e.g., Llama 3) to distill the technical essence of your changes.
+- **🤖 AI Analysis**: Uses Ollama (local) or Grok (xAI cloud) to distill the technical essence of your changes.
 - **📅 Date-Based Reports**: Retrieve all commits for a specific day across all branches simultaneously.
 - **⚖️ Duration Calculation**: Automatically calculates the total work time and formats it as hours and minutes.
 - **🛡️ Security**: All keys and configurations are stored locally in `.env` files.
@@ -24,12 +24,36 @@ A modern tool for automatically generating technical reports based on your Git c
 - [Ollama](https://ollama.com/) installed with the `llama3` model.
 - Python 3.9+ and Node.js 18+.
 
+#### Install Ollama
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+**macOS (alternative):** Download [Ollama.dmg](https://ollama.com/download/Ollama.dmg) and drag to Applications.
+
+**Pull the llama3 model after installation:**
+```bash
+ollama pull llama3
+```
+
+**Verify Ollama is running** (it usually starts automatically; if not):
+```bash
+ollama serve
+```
+
 ### 2. Environment Setup
 Create a `.env` file in the `backend/` folder:
 ```env
 TELEGRAM_TOKEN=your_token
 TELEGRAM_CHAT_ID=your_id
 OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=llama3
+
+# Optional: for Grok (xAI) - get API key at https://console.x.ai
+# XAI_API_KEY=your_xai_key
+# XAI_MODEL=grok-2
 ```
 
 Create a `.env.local` file in the `frontend/` folder:
@@ -59,7 +83,7 @@ This will automatically install dependencies for both backend and frontend, star
 
 ## ✨ Особливості
 
-- **🤖 AI Аналіз**: Використовує локальні моделі (наприклад, Llama 3) для дистиляції технічної суті ваших змін.
+- **🤖 AI Аналіз**: Використовує Ollama (локально) або Grok (xAI хмара) для дистиляції технічної суті ваших змін.
 - **📅 Звіти за Датою**: Отримуйте всі коміти за конкретний день з усіх гілок одночасно.
 - **⚖️ Розрахунок часу**: Автоматично підсумовує витрачений час та виводить його у форматі годин та хвилин.
 
@@ -77,12 +101,36 @@ This will automatically install dependencies for both backend and frontend, star
 - Встановлений [Ollama](https://ollama.com/) з моделлю `llama3`.
 - Python 3.9+ та Node.js 18+.
 
+#### Встановлення Ollama
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+**macOS (альтернатива):** Завантажте [Ollama.dmg](https://ollama.com/download/Ollama.dmg) і перетягніть у Programs.
+
+**Завантажте модель llama3 після встановлення:**
+```bash
+ollama pull llama3
+```
+
+**Перевірте, що Ollama працює** (зазвичай запускається автоматично; якщо ні):
+```bash
+ollama serve
+```
+
 ### 2. Налаштування оточення
 Створіть `.env` файл у папці `backend/`:
 ```env
 TELEGRAM_TOKEN=ваш_токен
 TELEGRAM_CHAT_ID=ваш_id
 OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=llama3
+
+# Опційно: для Grok (xAI) - ключ на https://console.x.ai
+# XAI_API_KEY=ваш_xai_ключ
+# XAI_MODEL=grok-2
 ```
 
 Створіть `.env.local` файл у папці `frontend/`:
