@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react"
+import { isToday } from "date-fns"
 import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -53,12 +54,12 @@ function Calendar({
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
-          "h-[--cell-size] w-[--cell-size] select-none p-0 aria-disabled:opacity-50",
+          "h-[--cell-size] w-[--cell-size] select-none p-0 aria-disabled:opacity-50 rounded-md transition-colors hover:bg-white/10 hover:text-foreground",
           defaultClassNames.button_previous
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
-          "h-[--cell-size] w-[--cell-size] select-none p-0 aria-disabled:opacity-50",
+          "h-[--cell-size] w-[--cell-size] select-none p-0 aria-disabled:opacity-50 rounded-md transition-colors hover:bg-white/10 hover:text-foreground",
           defaultClassNames.button_next
         ),
         month_caption: cn(
@@ -110,8 +111,12 @@ function Calendar({
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("bg-accent rounded-r-md", defaultClassNames.range_end),
         today: cn(
-          "bg-transparent text-foreground font-bold",
+          "rounded-md text-accent-foreground font-bold",
           defaultClassNames.today
+        ),
+        selected: cn(
+          "rounded-md bg-gray-800 text-accent-foreground font-bold",
+          defaultClassNames.selected
         ),
         outside: cn(
           "text-muted-foreground aria-selected:text-muted-foreground",
@@ -178,9 +183,9 @@ function CalendarDayButton({
   modifiers,
   ...props
 }: React.ComponentProps<typeof DayButton>) {
-
-
   const ref = React.useRef<HTMLButtonElement>(null)
+  const isTodayDate = isToday(day.date)
+
   React.useEffect(() => {
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
@@ -191,6 +196,7 @@ function CalendarDayButton({
       variant="ghost"
       size="icon"
       data-day={day.date.toLocaleDateString()}
+      data-today={isTodayDate}
       data-selected-single={
         modifiers.selected &&
         !modifiers.range_start &&
@@ -202,10 +208,10 @@ function CalendarDayButton({
       data-range-middle={modifiers.range_middle}
       className={cn(
         "relative flex size-8 items-center justify-center rounded-md font-normal leading-none transition-all duration-200",
-        "hover:bg-primary/20 hover:text-primary active:scale-95", // Hover effect
+        "hover:bg-primary/25 hover:text-primary active:scale-95",
         "group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 group-data-[focused=true]/day:ring-[3px] group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10",
-        modifiers.today && !modifiers.selected && "bg-primary/10 text-primary ring-1 ring-primary/30", // Today's state
-        modifiers.selected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground", // Selected state
+        isTodayDate && !modifiers.selected && "bg-primary/20 text-primary font-semibold ring-2 ring-primary/50",
+        modifiers.selected && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
         modifiers.range_middle && "bg-accent text-accent-foreground",
         modifiers.range_start && "bg-primary text-primary-foreground",
         modifiers.range_end && "bg-primary text-primary-foreground",

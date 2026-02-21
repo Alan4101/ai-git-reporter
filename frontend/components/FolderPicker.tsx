@@ -86,6 +86,7 @@ export function FolderPicker({ onAnalyze, isAnalyzing }: FolderPickerProps) {
                 <Calendar
                   mode="single"
                   selected={date}
+                  defaultMonth={new Date()}
                   onSelect={(d) => d && setDate(d)}
                   initialFocus
                   locale={uk}
