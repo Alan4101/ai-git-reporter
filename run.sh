@@ -25,6 +25,19 @@ trap cleanup SIGINT SIGTERM
 
 echo "🚀 Starting Git AI Reporter Pro..."
 
+# 0. Start Ollama if not running
+if command -v ollama &>/dev/null; then
+    if ! curl -s http://localhost:11434/api/tags &>/dev/null; then
+        echo "Starting Ollama..."
+        ollama serve &
+        sleep 2
+    else
+        echo "Ollama already running ✓"
+    fi
+else
+    echo "⚠️  Ollama not found. Install: curl -fsSL https://ollama.com/install.sh | sh"
+fi
+
 # 1. Cleanup old processes on these ports
 echo "Cleaning up ports 8000 and 3001..."
 lsof -ti:8000 | xargs kill -9 2>/dev/null
