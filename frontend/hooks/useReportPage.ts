@@ -7,8 +7,11 @@ import { api } from "@/lib/api"
 import { buildReportFromCommits, buildSummaryReport } from "@/lib/report-utils"
 import type { Commit } from "@/types"
 
+export type AIProvider = "ollama" | "grok"
+
 export function useReportPage() {
   const [commits, setCommits] = useState<Commit[]>([])
+  const [aiProvider, setAiProvider] = useState<AIProvider>("ollama")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [reportDate, setReportDate] = useState("")
   const [reportText, setReportText] = useState("")
@@ -47,7 +50,8 @@ export function useReportPage() {
         const res = await api.analyzeCommit(
           commit.summary,
           commit.files,
-          commit.duration
+          commit.duration,
+          aiProvider
         )
         const analysis = res.data.analysis
 
@@ -67,10 +71,14 @@ export function useReportPage() {
             c.hash === commit.hash ? { ...c, isAnalyzing: false } : c
           )
         )
-        setError("AI аналіз завершився помилкою. Перевірте, чи запущена Ollama.")
+        setError(
+          aiProvider === "ollama"
+            ? "AI аналіз завершився помилкою. Перевірте, чи запущена Ollama."
+            : "AI аналіз завершився помилкою. Перевірте XAI_API_KEY у .env"
+        )
       }
     },
-    [commits, reportDate]
+    [commits, reportDate, aiProvider]
   )
 
   const handleSendTelegram = useCallback(async () => {
@@ -100,7 +108,8 @@ export function useReportPage() {
     try {
       const res = await api.generateSummary(
         commits.map((c) => ({ summary: c.summary, duration: c.duration })),
-        reportDate
+        reportDate,
+        aiProvider
       )
       const total = commits.reduce((acc, c) => acc + c.duration, 0)
       setReportText(buildSummaryReport(res.data.summary, reportDate, total))
@@ -109,7 +118,7 @@ export function useReportPage() {
     } finally {
       setIsGeneratingFullReport(false)
     }
-  }, [commits, reportDate])
+  }, [commits, reportDate, aiProvider])
 
   const downloadReport = useCallback(() => {
     const element = document.createElement("a")
@@ -122,6 +131,8 @@ export function useReportPage() {
 
   return {
     commits,
+    aiProvider,
+    setAiProvider,
     reportText,
     reportDate,
     error,

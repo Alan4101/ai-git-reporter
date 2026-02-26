@@ -38,7 +38,7 @@ export function FolderPicker({ onAnalyze, isAnalyzing }: FolderPickerProps) {
   }
 
   return (
-    <Card className="border-white/10 bg-white/5 backdrop-blur-xl mb-8 overflow-hidden">
+    <Card className="border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
       <CardContent className="p-6">
         <div className="flex flex-col md:flex-row gap-6 items-end">
           <div className="flex-1 space-y-3 w-full">

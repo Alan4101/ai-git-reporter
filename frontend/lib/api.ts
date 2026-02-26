@@ -7,16 +7,30 @@ export const api = {
   analyze: (repoPath: string, date: string) =>
     axios.post<AnalyzeResponse>(`${API_BASE}/analyze`, { repo_path: repoPath, date }),
 
-  analyzeCommit: (commitMsg: string, files: string[], durationMins: number) =>
+  analyzeCommit: (
+    commitMsg: string,
+    files: string[],
+    durationMins: number,
+    provider: "ollama" | "grok" = "ollama"
+  ) =>
     axios.post<AIResponse>(`${API_BASE}/analyze-ai`, {
       commit_msg: commitMsg,
       files,
       duration_mins: durationMins,
+      provider,
     }),
 
   sendTelegram: (text: string) =>
     axios.post(`${API_BASE}/send-telegram`, { text }),
 
-  generateSummary: (commits: { summary: string; duration: number }[], date: string) =>
-    axios.post<{ summary: string }>(`${API_BASE}/analyze-summary`, { commits, date }),
+  generateSummary: (
+    commits: { summary: string; duration: number }[],
+    date: string,
+    provider: "ollama" | "grok" = "ollama"
+  ) =>
+    axios.post<{ summary: string }>(`${API_BASE}/analyze-summary`, {
+      commits,
+      date,
+      provider,
+    }),
 }

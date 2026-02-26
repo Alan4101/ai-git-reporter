@@ -27,6 +27,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+XAI_API_KEY = os.getenv("XAI_API_KEY")
+XAI_MODEL = os.getenv("XAI_MODEL", "grok-2")
 
 class AnalyzeRequest(BaseModel):
     repo_path: str
@@ -39,10 +41,12 @@ class AIRequest(BaseModel):
     commit_msg: str
     files: list[str]
     duration_mins: int = None
+    provider: str = "ollama"  # "ollama" | "grok"
 
 class SummaryRequest(BaseModel):
     commits: list[dict]
     date: str
+    provider: str = "ollama"  # "ollama" | "grok"
 
 @app.post("/analyze")
 async def analyze_repo(req: AnalyzeRequest):
@@ -80,6 +84,38 @@ async def analyze_repo(req: AnalyzeRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def _call_ai(prompt: str, provider: str, timeout: int = 30) -> str:
+    """Call AI provider (ollama or grok) and return response text."""
+    provider = (provider or "ollama").lower()
+    if provider == "grok":
+        if not XAI_API_KEY:
+            raise HTTPException(status_code=400, detail="XAI_API_KEY not configured. Add it to .env")
+        r = requests.post(
+            "https://api.x.ai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {XAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": XAI_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1024,
+            },
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        data = r.json()
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "AI error") or "AI error"
+    else:
+        r = requests.post(OLLAMA_URL, json={
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": False
+        }, timeout=timeout)
+        r.raise_for_status()
+        return r.json().get("response", "AI error")
+
+
 @app.post("/analyze-ai")
 async def analyze_ai(req: AIRequest):
     time_info = ""
@@ -103,14 +139,11 @@ async def analyze_ai(req: AIRequest):
     """
     
     try:
-        r = requests.post(OLLAMA_URL, json={
-            "model": OLLAMA_MODEL,
-            "prompt": prompt,
-            "stream": False
-        }, timeout=30)
-        return {"analysis": r.json().get('response', "AI error")}
-    except Exception:
-        raise HTTPException(status_code=503, detail="Ollama connection failed")
+        text = _call_ai(prompt, req.provider, timeout=30)
+        return {"analysis": text}
+    except requests.RequestException:
+        err = "Ollama connection failed" if req.provider == "ollama" else "Grok API error"
+        raise HTTPException(status_code=503, detail=err)
 
 @app.post("/analyze-summary")
 async def analyze_summary(req: SummaryRequest):
@@ -131,14 +164,11 @@ async def analyze_summary(req: SummaryRequest):
     """
     
     try:
-        r = requests.post(OLLAMA_URL, json={
-            "model": OLLAMA_MODEL,
-            "prompt": prompt,
-            "stream": False
-        }, timeout=45)
-        return {"summary": r.json().get('response', "AI error")}
-    except Exception:
-        raise HTTPException(status_code=503, detail="Ollama connection failed")
+        text = _call_ai(prompt, req.provider, timeout=45)
+        return {"summary": text}
+    except requests.RequestException:
+        err = "Ollama connection failed" if req.provider == "ollama" else "Grok API error"
+        raise HTTPException(status_code=503, detail=err)
 
 @app.post("/send-telegram")
 async def send_telegram(req: TelegramRequest):
